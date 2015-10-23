@@ -1,0 +1,149 @@
+﻿@using Trident.Helper;
+@model IEnumerable<Trident.Models.TestProjectReportViewModel>
+
+@{
+    var timeSlots = ViewBag.TimeSlots;
+    var recentNightFailures = from runInfo in Model
+                              from testReport in runInfo.RunTimeInfo
+                              where testReport.TestReport.RunBeginTime > DateTime.Now.AddDays(-2)
+                                    && testReport.TestReport.NumberOfFailures > 0
+                              select testReport.TestReport;
+
+    var recentNoonFailures = from runInfo in Model
+                             from testReport in runInfo.RunTimeInfo
+                             where testReport.TestReport.RunBeginTime > DateTime.Now.AddDays(-1)
+                                   && testReport.TestReport.NumberOfFailures > 0
+                             select testReport.TestReport;
+}
+
+
+
+        <div class="row">
+            <div class="col-md-12">
+                <h1 style="border-bottom:1px solid #ccc;">TELLURIUM DASHBOARD</h1>
+                <br/>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <h4>RECENT RUNS</h4>
+                <div class="panel-group" id="accordion">
+                    <div class="panel panel-danger">
+                        <div class="panel-heading" data-toggle="collapse" href="#testcases">
+                            Recent Run Issues
+                        </div>
+                    </div>
+                </div>
+                <div id="testcases" class="panel-collapse collapse">
+                    <div class="row">
+                        <div class="panel-body">
+                            <table class="table table-striped">
+                                <tr>
+                                    <th>Project Name</th>
+                                    <th>Test Mode</th>
+                                    <th>Browser</th>
+                                    <th>Machine</th>
+                                    <th align="center">Debug Files</th>
+                                </tr>
+                                @{ var nightReportCount = 1; }
+                                @foreach (var report in recentNightFailures)
+                                {
+                                    <div data-toggle="collapse" href="#transactions@(nightReportCount)">
+                                        <tbody>
+                                            <tr>
+                                                <td>@Html.DisplayFor(info => report.ProjectName)</td>
+                                                <td>@Html.DisplayFor(info => report.TestMode)</td>
+                                                <td>@Html.DisplayFor(info => report.Browser)</td>
+                                                <td>@Html.DisplayFor(info => report.MachineName)</td>
+                                                <td>
+                                                    <a href="http://localhost/VMTEST01/Billing/AFTMKT/logs/rolling-log.txt" target="_blank" class="btn btn-default">
+                                                        <img src="~/Images/debug/logicon.png" />
+                                                    </a>
+                                                    <a href="http://localhost/VMTEST01/Billing/AFTMKT/results/(chrome)SIMPLE_UI_TEST.xls" class="btn btn-default">
+                                                        <img src="~/Images/debug/resultsicon.png" />
+                                                    </a>
+                                                    <a href="http://localhost/VMTEST01/Billing/AFTMKT/logs/rolling-log.txt" class="btn btn-default">
+                                                        <img src="~/Images/debug/screenshoticon.png" />
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </div>
+                                }
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h4>VIRTUAL MACHINES</h4>
+                <div class="panel-group" id="accordion">
+                    <div class="panel panel-danger">
+                        <div class="panel-heading" data-toggle="collapse" href="#virtualmachine">
+                            Virtual Machine Issues
+                        </div>
+                    </div>
+                </div>
+                <div id="virtualmachine" class="panel-collapse collapse">
+                    <div class="row">
+                        <div class="panel-body">
+                            PENDING...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<div class="row">
+    <div class="col-md-12">
+        <h2>Automation 5 Day Report</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Project Name</th>
+                    <th>Mode</th>
+                    <th>Browser</th>
+                    <th>Machine</th>
+                    @foreach (var slot in ViewBag.TimeSlots)
+                    {
+                        <th>@slot</th>
+                    }
+                </tr>
+            </thead>
+            @foreach (var report in Model)
+            {
+                <tbody>
+                    <tr>
+                        <td>@Html.DisplayFor(reportItem => report.ProjectName)</td>
+                        <td>@Html.DisplayFor(reportItem => report.TestMode)</td>
+                        <td>@Html.DisplayFor(reportItem => report.Browser)</td>
+                        <td>@Html.DisplayFor(reportItem => report.VirtualMachine)</td>
+                        @foreach (var slot in ViewBag.TimeSlots as List<string>)
+                        {
+                            var runTimeInfo = report.RunTimeInfo;
+
+                            if (runTimeInfo.Any(info => info.Name.Equals(slot)))
+                            {
+                                var numOfFails = runTimeInfo.Where(info => info.Name.Equals(slot)).Select(field => field.TestReport.NumberOfFailures).First();
+
+                                if (numOfFails > 0)
+                                {
+                                    <td class="danger">@numOfFails FAIL</td>
+                                }
+                                else
+                                {
+                                    <td class="success">PASS</td>
+                                }
+
+                            }
+                            else
+                            {
+                                <td class="info">NO RUN</td>
+                            }
+                        }
+                    </tr>
+                </tbody>
+            }
+        </table>
+    </div>
+</div>
